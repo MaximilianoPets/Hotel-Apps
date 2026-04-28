@@ -1,0 +1,152 @@
+export const translations = {
+  es: {
+    // Login
+    login: 'Iniciar Sesión',
+    username: 'Usuario',
+    password: 'Contraseña',
+    enterUsername: 'Ingresa tu usuario',
+    enterPassword: 'Ingresa tu contraseña',
+    loginButton: 'Iniciar Sesión',
+    loggingIn: 'Iniciando sesión...',
+    register: 'Registrarse',
+    registerButton: 'Registrarse',
+    registering: 'Registrando...',
+    registerSuccess: 'Registro exitoso',
+    registerFailed: 'Registro fallido: ',
+    firstName: 'Nombre',
+    lastName: 'Apellido',
+    email: 'Correo electrónico',
+    enterFirstName: 'Ingresa tu nombre',
+    enterLastName: 'Ingresa tu apellido',
+    enterEmail: 'Ingresa tu correo',
+    optional: 'opcional',
+    usernamePasswordRequired: 'Solo Usuario y Contraseña son obligatorios',
+    testCredentials: 'Credenciales de Prueba:',
+    enabledUser: 'Usuario Habilitado:',
+    disabledUser: 'Usuario Inhabilitado:',
+    admin: 'Admin:',
+    loginSuccessful: '¡Inicio de sesión exitoso!',
+    loginFailed: 'Inicio de sesión fallido: ',
+    userNotFound: 'Usuario no encontrado',
+    invalidPassword: 'Contraseña inválida',
+
+    // Header
+    hotelBookingSystem: '🏨 Sistema de Reserva de Hoteles',
+    welcome: '¡Bienvenido',
+    logout: 'Cerrar Sesión',
+
+    // Hotel Search
+    availableHotels: 'Hoteles Disponibles',
+    searchByCity: 'Buscar por ciudad...',
+    maxPrice: 'Precio máximo por noche',
+    search: 'Buscar',
+    reset: 'Limpiar',
+    loadingHotels: 'Cargando hoteles...',
+    noResults: 'No se encontraron hoteles que coincidan con tu búsqueda',
+    failedLoadHotels: 'No se pudieron cargar los hoteles',
+
+    // Hotel Card
+    city: 'Ciudad:',
+    price: 'Precio:',
+    available: 'Disponible:',
+    yes: '✓ Sí',
+    no: '✗ No',
+    bookNow: 'Reservar Ahora',
+    unavailable: 'No Disponible',
+    checkIn: 'Fecha de Entrada',
+    checkOut: 'Fecha de Salida',
+    confirmBooking: 'Confirmar Reserva',
+    cancelBooking: 'Cancelar',
+    selectDates: 'Por favor selecciona fechas de entrada y salida',
+    bookingSuccessful: '¡Reserva exitosa!',
+    bookingFailed: 'La reserva falló: ',
+
+    // Bookings Section
+    yourBookings: 'Tus Reservas',
+    status: 'Estado:',
+    cancel: 'Cancelar',
+    confirmCancelBooking: '¿Estás seguro de que quieres cancelar esta reserva?',
+    bookingCancelled: 'Reserva cancelada',
+    cancelBookingFailed: 'No se pudo cancelar la reserva',
+
+    // Language
+    language: 'Idioma',
+    spanish: 'Español',
+    english: 'English'
+  },
+  en: {
+    // Login
+    login: 'Login',
+    username: 'Username',
+    password: 'Password',
+    enterUsername: 'Enter your username',
+    enterPassword: 'Enter your password',
+    loginButton: 'Login',
+    loggingIn: 'Logging in...',
+    register: 'Register',
+    registerButton: 'Register',
+    registering: 'Registering...',
+    registerSuccess: 'Registration successful',
+    registerFailed: 'Registration failed: ',
+    firstName: 'First Name',
+    lastName: 'Last Name',
+    email: 'Email',
+    enterFirstName: 'Enter your first name',
+    enterLastName: 'Enter your last name',
+    enterEmail: 'Enter your email',
+    optional: 'optional',
+    usernamePasswordRequired: 'Only Username and Password are required',
+    testCredentials: 'Test Credentials:',
+    enabledUser: 'Enabled User:',
+    disabledUser: 'Disabled User:',
+    admin: 'Admin:',
+    loginSuccessful: 'Login successful!',
+    loginFailed: 'Login failed: ',
+    userNotFound: 'User not found',
+    invalidPassword: 'Invalid password',
+
+    // Header
+    hotelBookingSystem: '🏨 Hotel Booking System',
+    welcome: 'Welcome',
+    logout: 'Logout',
+
+    // Hotel Search
+    availableHotels: 'Available Hotels',
+    searchByCity: 'Search by city...',
+    maxPrice: 'Max price per night',
+    search: 'Search',
+    reset: 'Reset',
+    loadingHotels: 'Loading hotels...',
+    noResults: 'No hotels found matching your search',
+    failedLoadHotels: 'Failed to load hotels',
+
+    // Hotel Card
+    city: 'City:',
+    price: 'Price:',
+    available: 'Available:',
+    yes: '✓ Yes',
+    no: '✗ No',
+    bookNow: 'Book Now',
+    unavailable: 'Unavailable',
+    checkIn: 'Check-in Date',
+    checkOut: 'Check-out Date',
+    confirmBooking: 'Confirm Booking',
+    cancelBooking: 'Cancel',
+    selectDates: 'Please select check-in and check-out dates',
+    bookingSuccessful: 'Booking successful!',
+    bookingFailed: 'Booking failed: ',
+
+    // Bookings Section
+    yourBookings: 'Your Bookings',
+    status: 'Status:',
+    cancel: 'Cancel',
+    confirmCancelBooking: 'Are you sure you want to cancel this booking?',
+    bookingCancelled: 'Booking cancelled',
+    cancelBookingFailed: 'Failed to cancel booking',
+
+    // Language
+    language: 'Language',
+    spanish: 'Español',
+    english: 'English'
+  }
+};
