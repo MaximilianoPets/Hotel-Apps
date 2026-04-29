@@ -1,36 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLanguage } from '../LanguageContext';
+import { useModal } from '../ModalContext';
 import HotelCard from './HotelCard';
 import './HotelSearch.css';
 
 function HotelSearch({ token, userId }) {
   const { t } = useLanguage();
+  const { showAlert, showConfirm } = useModal();
   const [hotels, setHotels] = useState([]);
   const [filteredHotels, setFilteredHotels] = useState([]);
-  const [city, setCity] = useState('');
+  const [location, setLocation] = useState('');
+  const [allLocations, setAllLocations] = useState([]);
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
   const [maxPrice, setMaxPrice] = useState('');
   const [bookings, setBookings] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    fetchHotels();
+    fetchLocations();
     fetchBookings();
   }, []);
 
-  const fetchHotels = async () => {
+  const fetchLocations = async () => {
     try {
-      setIsLoading(true);
-      const response = await axios.get('/api/hotels');
-      setHotels(response.data);
-      setFilteredHotels(response.data);
-      setError('');
+      const response = await axios.get('/api/locations');
+      setAllLocations(response.data);
     } catch (err) {
-      setError(t('failedLoadHotels'));
-      console.error(err);
-    } finally {
-      setIsLoading(false);
+      console.error('Failed to load locations', err);
     }
   };
 
@@ -43,34 +43,60 @@ function HotelSearch({ token, userId }) {
     }
   };
 
-  const handleSearch = (e) => {
+  const handleLocationChange = (e) => {
+    const val = e.target.value;
+    setLocation(val);
+    if (val.length > 0) {
+      const normalizeStr = (str) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+      
+      const filtered = allLocations.filter(loc => 
+        normalizeStr(loc).includes(normalizeStr(val))
+      );
+      setSuggestions(filtered);
+      setShowSuggestions(true);
+    } else {
+      setShowSuggestions(false);
+    }
+  };
+
+  const handleSuggestionClick = (loc) => {
+    setLocation(loc);
+    setShowSuggestions(false);
+  };
+
+  const handleSearch = async (e) => {
     e.preventDefault();
-    
-    // BUG: maxPrice filter uses string comparison instead of number
-    let results = hotels;
+    setHasSearched(true);
+    setShowSuggestions(false);
 
-    if (city) {
-      results = results.filter(h => h.city.toLowerCase().includes(city.toLowerCase()));
+    try {
+      setIsLoading(true);
+      const response = await axios.get('/api/hotels', {
+        params: { location, maxPrice }
+      });
+      setHotels(response.data);
+      setFilteredHotels(response.data);
+      setError('');
+    } catch (err) {
+      setError(t('failedLoadHotels'));
+      console.error(err);
+    } finally {
+      setIsLoading(false);
     }
-
-    if (maxPrice) {
-      results = results.filter(h => h.price <= parseInt(maxPrice));
-    }
-
-    setFilteredHotels(results);
   };
 
   const handleReset = () => {
-    setCity('');
+    setLocation('');
     setMaxPrice('');
-    setFilteredHotels(hotels);
+    setHasSearched(false);
+    setFilteredHotels([]);
+    setShowSuggestions(false);
   };
 
   const handleBooking = async (hotelId, checkIn, checkOut) => {
     try {
-      // BUG: No validation that checkOut > checkIn
       if (!checkIn || !checkOut) {
-        alert(t('selectDates'));
+        showAlert(t('selectDates'));
         return;
       }
 
@@ -81,23 +107,23 @@ function HotelSearch({ token, userId }) {
         checkOut
       });
 
-      alert(t('bookingSuccessful'));
+      showAlert(t('bookingSuccessful'));
       fetchBookings();
     } catch (err) {
-      alert(t('bookingFailed') + err.response?.data?.error);
+      showAlert(t('bookingFailed') + (err.response?.data?.error || ''));
     }
   };
 
-  const handleCancelBooking = async (bookingId) => {
-    if (window.confirm(t('confirmCancelBooking'))) {
+  const handleCancelBooking = (bookingId) => {
+    showConfirm(t('confirmCancelBooking'), async () => {
       try {
         await axios.delete(`/api/bookings/${bookingId}`);
-        alert(t('bookingCancelled'));
+        showAlert(t('bookingCancelled'));
         fetchBookings();
       } catch (err) {
-        alert(t('cancelBookingFailed'));
+        showAlert(t('cancelBookingFailed'));
       }
-    }
+    });
   };
 
   return (
@@ -105,13 +131,25 @@ function HotelSearch({ token, userId }) {
       <h2>{t('availableHotels')}</h2>
 
       <form className="search-form" onSubmit={handleSearch}>
-        <div className="search-group">
+        <div className="search-group autocomplete-container">
           <input
             type="text"
-            placeholder={t('searchByCity')}
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
+            placeholder={t('searchByLocation')}
+            value={location}
+            onChange={handleLocationChange}
+            onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+            onFocus={() => {if (location.length > 0) setShowSuggestions(true)}}
+            autoComplete="off"
           />
+          {showSuggestions && suggestions.length > 0 && (
+            <ul className="suggestions-list">
+              {suggestions.map((loc, idx) => (
+                <li key={idx} onClick={() => handleSuggestionClick(loc)}>
+                  {loc}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         <div className="search-group">
@@ -138,19 +176,21 @@ function HotelSearch({ token, userId }) {
         <div className="loading">{t('loadingHotels')}</div>
       ) : (
         <>
-          <div className="hotels-grid">
-            {filteredHotels.length > 0 ? (
-              filteredHotels.map(hotel => (
-                <HotelCard
-                  key={hotel.id}
-                  hotel={hotel}
-                  onBook={handleBooking}
-                />
-              ))
-            ) : (
-              <div className="no-results">{t('noResults')}</div>
-            )}
-          </div>
+          {hasSearched && (
+            <div className="hotels-grid">
+              {filteredHotels.length > 0 ? (
+                filteredHotels.map(hotel => (
+                  <HotelCard
+                    key={hotel.id}
+                    hotel={hotel}
+                    onBook={handleBooking}
+                  />
+                ))
+              ) : (
+                <div className="no-results">{t('noResults')}</div>
+              )}
+            </div>
+          )}
 
           {bookings.length > 0 && (
             <div className="bookings-section">
@@ -164,6 +204,8 @@ function HotelSearch({ token, userId }) {
                         <strong>{hotel?.name}</strong>
                         <p>{t('checkIn')}: {booking.checkIn}</p>
                         <p>{t('checkOut')}: {booking.checkOut}</p>
+                        {booking.pricePerNight && <p>{t('pricePerNight')}: ${booking.pricePerNight}</p>}
+                        {booking.totalPrice && <p><strong>{t('totalPrice')}: ${booking.totalPrice}</strong></p>}
                         <p>{t('status')} <span className="status">{booking.status}</span></p>
                       </div>
                       <button 

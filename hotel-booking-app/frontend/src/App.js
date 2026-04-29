@@ -2,11 +2,14 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Login from './components/Login';
 import HotelSearch from './components/HotelSearch';
+import AdminPanel from './components/AdminPanel';
 import { LanguageProvider, useLanguage } from './LanguageContext';
+import { ModalProvider, useModal } from './ModalContext';
 import './App.css';
 
 function AppContent() {
   const { t, language, changeLanguage } = useLanguage();
+  const { showAlert } = useModal();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token'));
@@ -35,18 +38,18 @@ function AppContent() {
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
       
-      alert(t('loginSuccessful'));
+      showAlert(t('loginSuccessful'));
     } catch (error) {
-      alert(t('loginFailed') + error.response?.data?.error);
+      showAlert(t('loginFailed') + (error.response?.data?.error || ''));
     }
   };
 
   const handleRegister = async (registrationData) => {
     try {
       await axios.post('/api/register', registrationData);
-      alert(t('registerSuccess'));
+      showAlert(t('registerSuccess'));
     } catch (error) {
-      alert(t('registerFailed') + error.response?.data?.error);
+      showAlert(t('registerFailed') + (error.response?.data?.error || ''));
       throw error;
     }
   };
@@ -73,7 +76,7 @@ function AppContent() {
           {isLoggedIn && (
             <div className="user-info">
               <span>{t('welcome')}, {user?.username}!</span>
-              <button onClick={handleLogout}>{t('logout')}</button>
+              <button onClick={handleLogout} style={{ marginLeft: '10px' }}>{t('logout')}</button>
             </div>
           )}
         </div>
@@ -82,6 +85,8 @@ function AppContent() {
       <main className="main-content">
         {!isLoggedIn ? (
           <Login onLogin={handleLogin} onRegister={handleRegister} />
+        ) : user?.is_admin === 1 ? (
+          <AdminPanel userId={user?.id} />
         ) : (
           <HotelSearch token={token} userId={user?.id} />
         )}
@@ -93,7 +98,9 @@ function AppContent() {
 function App() {
   return (
     <LanguageProvider>
-      <AppContent />
+      <ModalProvider>
+        <AppContent />
+      </ModalProvider>
     </LanguageProvider>
   );
 }

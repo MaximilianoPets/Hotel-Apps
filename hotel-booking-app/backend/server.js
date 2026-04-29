@@ -21,32 +21,7 @@ const pool = mysql.createPool({
   queueLimit: 0
 });
 
-const hotels = [
-  {
-    id: 1,
-    name: 'Hotel Paradise',
-    city: 'Miami',
-    price: 150,
-    rating: 4.5,
-    available: true
-  },
-  {
-    id: 2,
-    name: 'Mountain Resort',
-    city: 'Denver',
-    price: 120,
-    rating: 4.2,
-    available: true
-  },
-  {
-    id: 3,
-    name: 'Beach Club',
-    city: 'Cancun',
-    price: 200,
-    rating: 4.8,
-    available: false
-  }
-];
+
 
 async function initDatabase() {
   const connection = await pool.getConnection();
@@ -81,6 +56,52 @@ async function initDatabase() {
       is_admin BOOLEAN DEFAULT FALSE,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+
+    await connection.query(`CREATE TABLE IF NOT EXISTS hotels (
+      id INT PRIMARY KEY AUTO_INCREMENT,
+      name VARCHAR(100) NOT NULL,
+      city VARCHAR(100) NOT NULL,
+      country VARCHAR(100) DEFAULT '',
+      price DECIMAL(10, 2) NOT NULL,
+      rating DECIMAL(3, 1) DEFAULT 0.0,
+      available BOOLEAN DEFAULT TRUE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+
+    const [hotelRows] = await connection.query('SELECT COUNT(*) AS count FROM hotels');
+    if (hotelRows[0].count === 0) {
+      await connection.query(
+        'INSERT INTO hotels (name, city, country, price, rating, available) VALUES ?',
+        [[
+          ['Hotel Paradise', 'Miami', 'USA', 150.00, 4.5, 1],
+          ['Mountain Resort', 'Denver', 'USA', 120.00, 4.2, 1],
+          ['Beach Club', 'Cancun', 'Mexico', 200.00, 4.8, 0]
+        ]]
+      );
+    }
+
+    try {
+      await connection.query(`ALTER TABLE hotels ADD COLUMN country VARCHAR(100) DEFAULT '' AFTER city`);
+    } catch (err) {
+      if (!err.message.includes('Duplicate column')) {
+        console.log('Column already exists or other error:', err.message);
+      }
+    }
+
+    try {
+      await connection.query(`ALTER TABLE bookings ADD COLUMN price_per_night DECIMAL(10, 2) AFTER status`);
+    } catch (err) {
+      if (!err.message.includes('Duplicate column')) {
+        console.log('Column already exists or other error:', err.message);
+      }
+    }
+
+    try {
+      await connection.query(`ALTER TABLE bookings ADD COLUMN total_price DECIMAL(10, 2) AFTER price_per_night`);
+    } catch (err) {
+      if (!err.message.includes('Duplicate column')) {
+        console.log('Column already exists or other error:', err.message);
+      }
+    }
 
     // Add missing columns if they don't exist
     try {
@@ -150,7 +171,8 @@ async function getUserByIdentifier(identifier) {
         username: row.usuario || row.nombre || row.username || row.user || row.mail,
         email: row.mail || row.email,
         password: row.contrasena || row.password,
-        enabled: typeof row.enabled !== 'undefined' ? row.enabled : 1
+        enabled: typeof row.enabled !== 'undefined' ? row.enabled : 1,
+        is_admin: typeof row.is_admin !== 'undefined' ? row.is_admin : 0
       };
     }
   } catch (err) {
@@ -168,7 +190,8 @@ async function getUserByIdentifier(identifier) {
         username: row.nombre || row.username || row.user || row.mail,
         email: row.mail || row.email,
         password: row.contrasena || row.password,
-        enabled: typeof row.enabled !== 'undefined' ? row.enabled : 1
+        enabled: typeof row.enabled !== 'undefined' ? row.enabled : 1,
+        is_admin: typeof row.is_admin !== 'undefined' ? row.is_admin : 0
       };
     }
   } catch (err) {
@@ -178,18 +201,30 @@ async function getUserByIdentifier(identifier) {
   }
 
   const [rows3] = await pool.query('SELECT * FROM users WHERE username = ? LIMIT 1', [identifier]);
-  return rows3[0];
+  if (rows3.length) {
+    return { ...rows3[0], id: rows3[0].id + 10000, is_admin: 0 };
+  }
+  return null;
 }
 
 async function getBookingsByUser(userId) {
   const [rows] = await pool.query('SELECT * FROM bookings WHERE user_id = ?', [userId]);
-  return rows;
+  return rows.map(r => ({
+    id: r.id,
+    hotelId: r.hotel_id,
+    userId: r.user_id,
+    checkIn: r.check_in instanceof Date ? r.check_in.toISOString().split('T')[0] : r.check_in,
+    checkOut: r.check_out instanceof Date ? r.check_out.toISOString().split('T')[0] : r.check_out,
+    status: r.status,
+    pricePerNight: r.price_per_night,
+    totalPrice: r.total_price
+  }));
 }
 
-async function createBooking(hotelId, userId, checkIn, checkOut) {
+async function createBooking(hotelId, userId, checkIn, checkOut, pricePerNight, totalPrice) {
   const [result] = await pool.query(
-    'INSERT INTO bookings (hotel_id, user_id, check_in, check_out, status) VALUES (?, ?, ?, ?, ?)',
-    [hotelId, userId, checkIn, checkOut, 'confirmed']
+    'INSERT INTO bookings (hotel_id, user_id, check_in, check_out, status, price_per_night, total_price) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    [hotelId, userId, checkIn, checkOut, 'confirmed', pricePerNight, totalPrice]
   );
 
   return {
@@ -198,7 +233,9 @@ async function createBooking(hotelId, userId, checkIn, checkOut) {
     userId,
     checkIn,
     checkOut,
-    status: 'confirmed'
+    status: 'confirmed',
+    pricePerNight,
+    totalPrice
   };
 }
 
@@ -268,7 +305,8 @@ app.post('/api/login', async (req, res) => {
       user: {
         id: user.id,
         username: user.username,
-        email: user.email
+        email: user.email,
+        is_admin: user.is_admin
       }
     });
   } catch (err) {
@@ -313,28 +351,121 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
-app.get('/api/hotels', (req, res) => {
-  const { city, maxPrice } = req.query;
-
-  let filtered = hotels;
-
-  if (city) {
-    filtered = filtered.filter(h => h.city.toLowerCase().includes(city.toLowerCase()));
+app.get('/api/locations', async (req, res) => {
+  try {
+    const [rows] = await pool.query("SELECT DISTINCT CONCAT(city, ', ', country) AS location FROM hotels WHERE country IS NOT NULL AND country != '' ORDER BY location");
+    res.json(rows.map(r => r.location));
+  } catch (err) {
+    console.error('Error fetching locations:', err);
+    res.status(500).json({ error: 'Could not fetch locations' });
   }
-
-  if (maxPrice) {
-    filtered = filtered.filter(h => h.price < maxPrice);
-  }
-
-  res.json(filtered);
 });
 
-app.get('/api/hotels/:id', (req, res) => {
-  const hotel = hotels.find(h => h.id == req.params.id);
-  if (!hotel) {
-    return res.status(404).json({ error: 'Hotel not found' });
+app.get('/api/hotels', async (req, res) => {
+  const { location, maxPrice } = req.query;
+
+  try {
+    let query = 'SELECT * FROM hotels WHERE 1=1';
+    const values = [];
+
+    if (location) {
+      query += " AND LOWER(CONCAT(city, ', ', country)) LIKE ?";
+      values.push(`%${location.toLowerCase()}%`);
+    }
+
+    if (maxPrice) {
+      query += ' AND price < ?';
+      values.push(maxPrice);
+    }
+
+    const [filtered] = await pool.query(query, values);
+    
+    const formatted = filtered.map(h => ({
+      ...h,
+      available: h.available === 1
+    }));
+    
+    res.json(formatted);
+  } catch (err) {
+    console.error('Error fetching hotels:', err);
+    res.status(500).json({ error: 'Could not fetch hotels' });
   }
-  res.json(hotel);
+});
+
+app.get('/api/hotels/:id', async (req, res) => {
+  try {
+    const [rows] = await pool.query('SELECT * FROM hotels WHERE id = ?', [req.params.id]);
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Hotel not found' });
+    }
+    const hotel = { ...rows[0], available: rows[0].available === 1 };
+    res.json(hotel);
+  } catch (err) {
+    console.error('Error fetching hotel:', err);
+    res.status(500).json({ error: 'Could not fetch hotel' });
+  }
+});
+
+app.post('/api/hotels', async (req, res) => {
+  const { name, city, country, price, rating, available } = req.body;
+
+  if (!name || !city || !country || price === undefined || rating === undefined) {
+    return res.status(400).json({ error: 'Todos los campos son obligatorios' });
+  }
+
+  try {
+    const [result] = await pool.query(
+      'INSERT INTO hotels (name, city, country, price, rating, available) VALUES (?, ?, ?, ?, ?, ?)',
+      [name, city, country, price, rating, available !== undefined ? available : 1]
+    );
+    res.status(201).json({ id: result.insertId, name, city, country, price, rating, available: available !== undefined ? available : true });
+  } catch (err) {
+    console.error('Error creating hotel:', err);
+    res.status(500).json({ error: 'Could not create hotel' });
+  }
+});
+
+app.put('/api/hotels/:id', async (req, res) => {
+  const { name, city, country, price, rating, available } = req.body;
+
+  if (!name || !city || !country || price === undefined || rating === undefined) {
+    return res.status(400).json({ error: 'Todos los campos son obligatorios' });
+  }
+
+  try {
+    const [result] = await pool.query(
+      'UPDATE hotels SET name = ?, city = ?, country = ?, price = ?, rating = ?, available = ? WHERE id = ?',
+      [name, city, country, price, rating, available ? 1 : 0, req.params.id]
+    );
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Hotel not found' });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error updating hotel:', err);
+    res.status(500).json({ error: 'Could not update hotel' });
+  }
+});
+
+app.delete('/api/hotels/:id', async (req, res) => {
+  try {
+    const [bookings] = await pool.query(
+      "SELECT COUNT(*) AS count FROM bookings WHERE hotel_id = ? AND status = 'confirmed'",
+      [req.params.id]
+    );
+    if (bookings[0].count > 0) {
+      return res.status(409).json({ error: 'No se puede eliminar el hotel ya que tiene reservas vigentes' });
+    }
+
+    const [result] = await pool.query('DELETE FROM hotels WHERE id = ?', [req.params.id]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Hotel not found' });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error deleting hotel:', err);
+    res.status(500).json({ error: 'Could not delete hotel' });
+  }
 });
 
 app.post('/api/bookings', async (req, res) => {
@@ -344,13 +475,23 @@ app.post('/api/bookings', async (req, res) => {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
-  const hotel = hotels.find(h => h.id == hotelId);
-  if (!hotel) {
-    return res.status(404).json({ error: 'Hotel not found' });
-  }
-
   try {
-    const booking = await createBooking(hotelId, userId, checkIn, checkOut);
+    const [hotelRows] = await pool.query('SELECT id, price FROM hotels WHERE id = ?', [hotelId]);
+    if (hotelRows.length === 0) {
+      return res.status(404).json({ error: 'Hotel not found' });
+    }
+    const hotel = hotelRows[0];
+
+    const checkInDate = new Date(checkIn);
+    const checkOutDate = new Date(checkOut);
+    const diffTime = Math.abs(checkOutDate - checkInDate);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const nights = diffDays > 0 ? diffDays : 1;
+
+    const pricePerNight = hotel.price;
+    const totalPrice = pricePerNight * nights;
+
+    const booking = await createBooking(hotelId, userId, checkIn, checkOut, pricePerNight, totalPrice);
     res.status(201).json(booking);
   } catch (err) {
     console.error('Booking error:', err);
@@ -358,8 +499,40 @@ app.post('/api/bookings', async (req, res) => {
   }
 });
 
+app.get('/api/bookings', async (req, res) => {
+  try {
+    const [rows] = await pool.query(`
+      SELECT b.*, h.name as hotel_name, h.city as hotel_city, u.usuario as user_name 
+      FROM bookings b 
+      LEFT JOIN hotels h ON b.hotel_id = h.id
+      LEFT JOIN usuarios u ON b.user_id = u.id
+      ORDER BY b.check_in DESC
+    `);
+    const allBookings = rows.map(r => ({
+      id: r.id,
+      hotelId: r.hotel_id,
+      hotelName: r.hotel_name,
+      hotelCity: r.hotel_city,
+      userId: r.user_id,
+      userName: r.user_name,
+      checkIn: r.check_in instanceof Date ? r.check_in.toISOString().split('T')[0] : r.check_in,
+      checkOut: r.check_out instanceof Date ? r.check_out.toISOString().split('T')[0] : r.check_out,
+      status: r.status,
+      pricePerNight: r.price_per_night,
+      totalPrice: r.total_price
+    }));
+    res.json(allBookings);
+  } catch (err) {
+    console.error('All bookings fetch error:', err);
+    res.status(500).json({ error: 'Could not load all bookings' });
+  }
+});
+
 app.get('/api/bookings/:userId', async (req, res) => {
   try {
+    if (req.params.userId === 'undefined' || !req.params.userId) {
+      return res.json([]);
+    }
     const userBookings = await getBookingsByUser(req.params.userId);
     res.json(userBookings);
   } catch (err) {

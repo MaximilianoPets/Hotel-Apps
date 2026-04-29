@@ -37,7 +37,7 @@ export const translations = {
 
     // Hotel Search
     availableHotels: 'Hoteles Disponibles',
-    searchByCity: 'Buscar por ciudad...',
+    searchByLocation: 'Buscar por ciudad o país...',
     maxPrice: 'Precio máximo por noche',
     search: 'Buscar',
     reset: 'Limpiar',
@@ -60,6 +60,8 @@ export const translations = {
     selectDates: 'Por favor selecciona fechas de entrada y salida',
     bookingSuccessful: '¡Reserva exitosa!',
     bookingFailed: 'La reserva falló: ',
+    pricePerNight: 'Precio por noche',
+    totalPrice: 'Total a abonar',
 
     // Bookings Section
     yourBookings: 'Tus Reservas',
@@ -72,7 +74,50 @@ export const translations = {
     // Language
     language: 'Idioma',
     spanish: 'Español',
-    english: 'English'
+    english: 'English',
+
+    // Admin Panel
+    adminPanel: 'Administración',
+    manageUsers: 'Gestión de Usuarios',
+    manageHotels: 'Hoteles Disponibles',
+    manageBookings: 'Gestión de Reservas',
+    manageUsersDesc: 'Ver, editar y eliminar usuarios del sistema',
+    manageHotelsDesc: 'Consultar todos los hoteles registrados',
+    manageBookingsDesc: 'Ver y administrar todas las reservas',
+    backToDashboard: 'Volver al panel',
+    tabUsers: 'Usuarios',
+    tabBookings: 'Reservas',
+    country: 'País',
+    rating: 'Puntuación',
+    edit: 'Editar',
+    delete: 'Eliminar',
+    save: 'Guardar',
+    cancelEdit: 'Cancelar',
+    enabled: 'Habilitado',
+    role: 'Rol',
+    adminRole: 'Administrador',
+    userRole: 'Usuario',
+    deleteConfirm: '¿Estás seguro de que quieres eliminar este usuario?',
+    deleteBookingConfirm: '¿Estás seguro de que quieres eliminar esta reserva?',
+    deleteHotelConfirm: '¿Estás seguro de que quieres eliminar este hotel?',
+    userDeleted: 'Usuario eliminado correctamente',
+    userUpdated: 'Usuario actualizado correctamente',
+    bookingDeleted: 'Reserva eliminada correctamente',
+    hotelCreated: 'Hotel creado correctamente',
+    hotelUpdated: 'Hotel actualizado correctamente',
+    hotelDeleted: 'Hotel eliminado correctamente',
+    hotelHasBookings: 'No se puede eliminar el hotel ya que tiene reservas vigentes',
+    allFieldsRequired: 'Todos los campos son obligatorios',
+    addHotel: 'Agregar Hotel',
+    hotelName: 'Nombre del Hotel',
+    actionFailed: 'Error en la acción',
+    name: 'Nombre',
+    lastNameField: 'Apellido',
+    emailField: 'Email',
+    hotel: 'Hotel',
+    user: 'Usuario',
+    dates: 'Fechas',
+    noBookingsFound: 'No se encontraron reservas'
   },
   en: {
     // Login
@@ -112,7 +157,7 @@ export const translations = {
 
     // Hotel Search
     availableHotels: 'Available Hotels',
-    searchByCity: 'Search by city...',
+    searchByLocation: 'Search by city or country...',
     maxPrice: 'Max price per night',
     search: 'Search',
     reset: 'Reset',
@@ -135,6 +180,8 @@ export const translations = {
     selectDates: 'Please select check-in and check-out dates',
     bookingSuccessful: 'Booking successful!',
     bookingFailed: 'Booking failed: ',
+    pricePerNight: 'Price per night',
+    totalPrice: 'Total price',
 
     // Bookings Section
     yourBookings: 'Your Bookings',
@@ -147,6 +194,49 @@ export const translations = {
     // Language
     language: 'Language',
     spanish: 'Español',
-    english: 'English'
+    english: 'English',
+
+    // Admin Panel
+    adminPanel: 'Administration',
+    manageUsers: 'User Management',
+    manageHotels: 'Available Hotels',
+    manageBookings: 'Booking Management',
+    manageUsersDesc: 'View, edit and delete system users',
+    manageHotelsDesc: 'View all registered hotels',
+    manageBookingsDesc: 'View and manage all bookings',
+    backToDashboard: 'Back to dashboard',
+    tabUsers: 'Users',
+    tabBookings: 'Bookings',
+    country: 'Country',
+    rating: 'Rating',
+    edit: 'Edit',
+    delete: 'Delete',
+    save: 'Save',
+    cancelEdit: 'Cancel',
+    enabled: 'Enabled',
+    role: 'Role',
+    adminRole: 'Admin',
+    userRole: 'User',
+    deleteConfirm: 'Are you sure you want to delete this user?',
+    deleteBookingConfirm: 'Are you sure you want to delete this booking?',
+    deleteHotelConfirm: 'Are you sure you want to delete this hotel?',
+    userDeleted: 'User deleted successfully',
+    userUpdated: 'User updated successfully',
+    bookingDeleted: 'Booking deleted successfully',
+    hotelCreated: 'Hotel created successfully',
+    hotelUpdated: 'Hotel updated successfully',
+    hotelDeleted: 'Hotel deleted successfully',
+    hotelHasBookings: 'Cannot delete hotel because it has active bookings',
+    allFieldsRequired: 'All fields are required',
+    addHotel: 'Add Hotel',
+    hotelName: 'Hotel Name',
+    actionFailed: 'Action failed',
+    name: 'First Name',
+    lastNameField: 'Last Name',
+    emailField: 'Email',
+    hotel: 'Hotel',
+    user: 'User',
+    dates: 'Dates',
+    noBookingsFound: 'No bookings found'
   }
 };
