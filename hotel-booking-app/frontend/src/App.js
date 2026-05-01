@@ -86,7 +86,7 @@ function AppContent() {
         {!isLoggedIn ? (
           <Login onLogin={handleLogin} onRegister={handleRegister} />
         ) : user?.is_admin === 1 ? (
-          <AdminPanel userId={user?.id} />
+          <AdminPanel token={token} userId={user?.id} />
         ) : (
           <HotelSearch token={token} userId={user?.id} />
         )}

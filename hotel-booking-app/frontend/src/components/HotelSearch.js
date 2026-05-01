@@ -6,6 +6,7 @@ import HotelCard from './HotelCard';
 import './HotelSearch.css';
 
 function HotelSearch({ token, userId }) {
+  const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
   const { t } = useLanguage();
   const { showAlert, showConfirm } = useModal();
   const [hotels, setHotels] = useState([]);
@@ -36,7 +37,7 @@ function HotelSearch({ token, userId }) {
 
   const fetchBookings = async () => {
     try {
-      const response = await axios.get(`/api/bookings/${userId}`);
+      const response = await axios.get(`/api/bookings/${userId}`, { headers: authHeaders });
       setBookings(response.data);
     } catch (err) {
       console.error('Failed to load bookings:', err);
@@ -102,10 +103,9 @@ function HotelSearch({ token, userId }) {
 
       const response = await axios.post('/api/bookings', {
         hotelId,
-        userId,
         checkIn,
         checkOut
-      });
+      }, { headers: authHeaders });
 
       showAlert(t('bookingSuccessful'));
       fetchBookings();
@@ -117,7 +117,7 @@ function HotelSearch({ token, userId }) {
   const handleCancelBooking = (bookingId) => {
     showConfirm(t('confirmCancelBooking'), async () => {
       try {
-        await axios.delete(`/api/bookings/${bookingId}`);
+        await axios.delete(`/api/bookings/${bookingId}`, { headers: authHeaders });
         showAlert(t('bookingCancelled'));
         fetchBookings();
       } catch (err) {

@@ -4,7 +4,8 @@ import { useLanguage } from '../LanguageContext';
 import { useModal } from '../ModalContext';
 import './AdminPanel.css';
 
-function AdminPanel({ userId }) {
+function AdminPanel({ token, userId }) {
+  const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
   const { t } = useLanguage();
   const { showAlert, showConfirm } = useModal();
   const [activeSection, setActiveSection] = useState(null);
@@ -24,7 +25,7 @@ function AdminPanel({ userId }) {
   const fetchUsers = async () => {
     try {
       const response = await axios.get('/api/admin/usuarios', {
-        headers: { 'x-admin-id': userId }
+        headers: authHeaders
       });
       setUsers(response.data);
     } catch (error) {
@@ -43,7 +44,7 @@ function AdminPanel({ userId }) {
 
   const fetchBookings = async () => {
     try {
-      const response = await axios.get('/api/bookings');
+      const response = await axios.get('/api/bookings', { headers: authHeaders });
       setBookings(response.data);
     } catch (error) {
       showAlert(t('actionFailed') + ': ' + (error.response?.data?.error || error.message));
@@ -67,9 +68,7 @@ function AdminPanel({ userId }) {
   const handleDeleteUser = (id) => {
     showConfirm(t('deleteConfirm'), async () => {
       try {
-        await axios.delete(`/api/admin/usuarios/${id}`, {
-          headers: { 'x-admin-id': userId }
-        });
+        await axios.delete(`/api/admin/usuarios/${id}`, { headers: authHeaders });
         showAlert(t('userDeleted'));
         setUsers(users.filter(u => u.id !== id));
       } catch (error) {
@@ -105,7 +104,7 @@ function AdminPanel({ userId }) {
   const handleSave = async (id) => {
     try {
       await axios.put(`/api/admin/usuarios/${id}`, editFormData, {
-        headers: { 'x-admin-id': userId }
+        headers: authHeaders
       });
       showAlert(t('userUpdated'));
       setEditingUserId(null);
@@ -119,7 +118,7 @@ function AdminPanel({ userId }) {
   const handleDeleteHotel = (id) => {
     showConfirm(t('deleteHotelConfirm'), async () => {
       try {
-        await axios.delete(`/api/hotels/${id}`);
+        await axios.delete(`/api/hotels/${id}`, { headers: authHeaders });
         showAlert(t('hotelDeleted'));
         setHotels(hotels.filter(h => h.id !== id));
       } catch (error) {
@@ -166,7 +165,7 @@ function AdminPanel({ userId }) {
       await axios.put(`/api/hotels/${id}`, {
         ...editHotelData,
         available: editHotelData.available === 1
-      });
+      }, { headers: authHeaders });
       showAlert(t('hotelUpdated'));
       setEditingHotelId(null);
       fetchHotels();
@@ -194,7 +193,7 @@ function AdminPanel({ userId }) {
         price: parseFloat(newHotelData.price),
         rating: parseFloat(newHotelData.rating),
         available: newHotelData.available ? 1 : 0
-      });
+      }, { headers: authHeaders });
       showAlert(t('hotelCreated'));
       setShowAddHotelModal(false);
       setNewHotelData({ name: '', city: '', country: '', price: '', rating: '', available: true });
@@ -208,7 +207,7 @@ function AdminPanel({ userId }) {
   const handleDeleteBooking = (id) => {
     showConfirm(t('deleteBookingConfirm'), async () => {
       try {
-        await axios.delete(`/api/bookings/${id}`);
+        await axios.delete(`/api/bookings/${id}`, { headers: authHeaders });
         showAlert(t('bookingDeleted'));
         setBookings(bookings.filter(b => b.id !== id));
       } catch (error) {
